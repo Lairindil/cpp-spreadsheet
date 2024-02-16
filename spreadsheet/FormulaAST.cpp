@@ -72,7 +72,7 @@ public:
     virtual ~Expr() = default;
     virtual void Print(std::ostream& out) const = 0;
     virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-    virtual double Evaluate(/*добавьте сюда нужные аргументы*/ args) const = 0;
+    virtual double Evaluate(const SheetFunctor& functor) const = 0;
 
     // higher is tighter
     virtual ExprPrecedence GetPrecedence() const = 0;
@@ -142,8 +142,31 @@ public:
         }
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/) const override {
-			// Скопируйте ваше решение из предыдущих уроков.
+// Реализуйте метод Evaluate() для бинарных операций.
+// При делении на 0 выбрасывайте ошибку вычисления FormulaError
+    double Evaluate(const SheetFunctor& functor) const override {
+        double result = 0.0;
+        switch (type_) {
+            case Add:
+                result = lhs_->Evaluate(functor) + rhs_->Evaluate(functor);
+                break;
+            case Subtract:
+                result = lhs_->Evaluate(functor) - rhs_->Evaluate(functor);
+                break;
+            case Multiply:
+                result = lhs_->Evaluate(functor) * rhs_->Evaluate(functor);
+                break;
+            case Divide:
+                result = lhs_->Evaluate(functor) / rhs_->Evaluate(functor);
+                break;
+            default:;
+                throw ParsingError("Invalid operator");
+        }
+        
+        if (!std::isfinite(result)) {
+            throw FormulaError(FormulaError::Category::Div0);
+        }
+        return result;
     }
 
 private:
@@ -180,8 +203,15 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(const SheetFunctor& functor) const override {
+        switch (type_) {
+            case UnaryPlus:
+                return +operand_->Evaluate(functor);
+            case UnaryMinus:
+                return -operand_->Evaluate(functor);
+            default:
+                return 0.0;
+        }
     }
 
 private:
@@ -211,13 +241,15 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
+    double Evaluate(const SheetFunctor& functor) const override {
         // реализуйте метод.
+        return functor(*cell_);
     }
 
 private:
     const Position* cell_;
 };
+
 
 class NumberExpr final : public Expr {
 public:
@@ -237,7 +269,8 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
+// Для чисел метод возвращает значение числа.
+    double Evaluate(const SheetFunctor& functor) const override {
         return value_;
     }
 
@@ -254,7 +287,7 @@ public:
 
         return root;
     }
-
+    
     std::forward_list<Position> MoveCells() {
         return std::move(cells_);
     }
@@ -290,6 +323,7 @@ public:
         args_.push_back(std::move(node));
     }
 
+
     void exitCell(FormulaParser::CellContext* ctx) override {
         auto value_str = ctx->CELL()->getSymbol()->getText();
         auto value = Position::FromString(value_str);
@@ -301,7 +335,7 @@ public:
         auto node = std::make_unique<CellExpr>(&cells_.front());
         args_.push_back(std::move(node));
     }
-
+    
     void exitBinaryOp(FormulaParser::BinaryOpContext* ctx) override {
         assert(args_.size() >= 2);
 
@@ -332,6 +366,7 @@ public:
 
 private:
     std::vector<std::unique_ptr<Expr>> args_;
+    
     std::forward_list<Position> cells_;
 };
 
@@ -391,8 +426,9 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute(/*добавьте нужные аргументы*/ args) const {
-    return root_expr_->Evaluate(/*добавьте нужные аргументы*/ args);
+
+double FormulaAST::Execute(const SheetFunctor& functor) const {
+    return root_expr_->Evaluate(functor);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
@@ -400,5 +436,6 @@ FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_li
     , cells_(std::move(cells)) {
     cells_.sort();  // to avoid sorting in GetReferencedCells
 }
+
 
 FormulaAST::~FormulaAST() = default;

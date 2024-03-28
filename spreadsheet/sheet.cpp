@@ -25,7 +25,9 @@ void Sheet::SetCell(Position pos, std::string text) {
         sheet_[pos.row].resize(pos.col + 1);
     }
     //добавляем ячейку
-    sheet_[pos.row][pos.col] = std::make_unique<Cell>(*this);
+    if (!sheet_[pos.row][pos.col]) {
+        sheet_[pos.row][pos.col] = std::make_unique<Cell>(*this);
+    }
     sheet_[pos.row][pos.col]->Set(std::move(text));
 }
 

@@ -64,13 +64,7 @@ public:
             if (std::holds_alternative<std::string>(cell->GetValue())) {
                 auto value = std::get<std::string>(cell->GetValue());
                 double result = 0;
-//                if (!value.empty()) {
-//                    try {
-//                        result = std::stod(value);
-//                    } catch (const std::exception&) {
-//                        throw FormulaError(FormulaError::Category::Value);
-//                    }
-//                }
+
                 if (!value.empty()) {
                     std::istringstream in(value);
                     if (!(in >> result) || !in.eof()) throw FormulaError(FormulaError::Category::Value);

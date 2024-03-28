@@ -7,13 +7,6 @@
 
 #include <vector>
 
-//class CellsComp {
-//public:
-//    bool operator()(const Position& lhs, const Position& rhs) const {
-//        return lhs == rhs;
-//    }
-//};
-
 class Sheet : public SheetInterface {
 public:
     ~Sheet();

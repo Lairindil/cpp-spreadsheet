@@ -126,13 +126,8 @@ bool Cell::IsThereCircularDependency(const Impl& new_impl) const {
             if (referenced.find(curr_cell) != referenced.end()) {
                 return true;
             }
-            
-            if (dynamic_cast<const Impl*>(curr_cell) == &new_impl) {
-                // Сразу безусловный выход из цикла
-                return false;
-            }
 
-            for (const auto& dependent_cell : curr_cell->rhs_cells_) {
+            for (const auto& dependent_cell : curr_cell->lhs_cells_) {
                 if (visited.find(dependent_cell) == visited.end()) {
                     to_visit.push(dependent_cell);
                 }
@@ -157,7 +152,7 @@ Cell::Cell(Sheet& sheet)
 Cell::~Cell() {}
 
 void Cell::Set(std::string text) {
-    std::unique_ptr<Impl> impl;
+    std::unique_ptr<Impl> impl = nullptr;
 
     if (text.empty()) {
         impl = std::make_unique<EmptyImpl>();

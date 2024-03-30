@@ -1,14 +1,6 @@
 # cpp-spreadsheet
 Учебный проект: Электронная таблица
 
-## Требования
-
-- C++17 или выше
-
-- [JDK](https://www.oracle.com/java/technologies/downloads/) или OpenJDK
-
-- [ANTLR](https://www.antlr.org/index.html)
-
 
 ## Описание
 
@@ -44,3 +36,14 @@
  └── ...
 </pre>   
 6. В папке build запустите сборку проекта с помощью CMake.
+
+
+## Требования
+
+- C++17 или выше
+
+- [JDK](https://www.oracle.com/java/technologies/downloads/) или OpenJDK
+
+- [ANTLR](https://www.antlr.org/index.html)
+
+
